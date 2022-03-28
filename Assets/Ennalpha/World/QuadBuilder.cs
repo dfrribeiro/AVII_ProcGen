@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -68,15 +69,43 @@ public class QuadBuilder : MonoBehaviour
         MeshFilter mf = quad.AddComponent<MeshFilter>();
         mf.mesh = mesh;
 
-        MeshRenderer mr = quad.AddComponent<MeshRenderer>();
-        mr.material = mat;
+        // MeshRenderer mr = quad.AddComponent<MeshRenderer>();
+        // mr.material = mat;
+    }
+
+    void CombineQuads()
+    {
+        MeshFilter[] filters = GetComponentsInChildren<MeshFilter>();
+        CombineInstance[] combine = new CombineInstance[filters.Length];
+        
+        for (var i = 0; i < filters.Length; i++)
+        {
+            combine[i].mesh = filters[i].sharedMesh;
+            combine[i].transform = filters[i].transform.localToWorldMatrix;
+        }
+
+        MeshFilter newFilter = gameObject.AddComponent<MeshFilter>();
+        newFilter.mesh = new Mesh();
+
+        newFilter.mesh.CombineMeshes(combine);
+
+        MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
+        renderer.material = mat;
+        
+        foreach (Transform quad in transform)
+        {
+            Destroy(quad.gameObject);
+        }
     }
     
     // Start is called before the first frame update
     void Start()
     {
-        Quad(CubeSide.LEFT);
-        Quad(CubeSide.TOP);
+        foreach (CubeSide side in Enum.GetValues(typeof(CubeSide)))
+        {
+            Quad(side);
+        }
+        CombineQuads();
     }
 
     // Update is called once per frame
