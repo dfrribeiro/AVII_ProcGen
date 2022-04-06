@@ -17,7 +17,7 @@ public class WorldBuilder : MonoBehaviour
 
     IEnumerator BuildWorld()
     {
-        Vector3 playerPos = Vector3.zero; // TODO
+        Vector3 playerPos = Vector3.zero;
         /*for (int z = 0; z < size; z++)
         {
             for (int y = 0; y < size; y++)
