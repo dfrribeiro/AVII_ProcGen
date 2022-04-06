@@ -22,9 +22,9 @@ public class Chunk
     
     void BuildChunk()
     {
-        chunkData = new Block[World.chunkSize, World.chunkSize, World.chunkSize];
+        chunkData = new Block[World.CHUNK_SIZE, World.CHUNK_SIZE, World.CHUNK_SIZE];
         
-        var range = Enumerable.Range(0, World.chunkSize);
+        var range = Enumerable.Range(0, World.CHUNK_SIZE);
         var allPositions =
             from x in range
             from y in range
@@ -66,7 +66,7 @@ public class Chunk
             if (Utils.FractionalBrownianMotion3D(worldPos, 1, 0.5f) < caveRatio) // 0.5f
             {
                 // cave generation
-                return Block.BlockType.AIR;
+                //return Block.BlockType.AIR; TODO
             }
             return Block.BlockType.STONE;
         }

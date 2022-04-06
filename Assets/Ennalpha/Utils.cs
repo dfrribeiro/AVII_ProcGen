@@ -7,10 +7,10 @@ public class Utils
     public static float irregularitySurface = 0.005f; // inverse smooth
     public static float irregularityCave = 10*irregularitySurface;
     public static int terrainMaxHeight = 64; // max WorldSize
-    public static int terrainMinHeight = 32;
+    public static int terrainMinHeight = 0;
     public static int octaves = 6;
     public static float persistence = 0.7f;
-    public static float offset = int.MaxValue/2f; // evita simetria a zero : os resultados para x e -x são iguais
+    public static float offset = 32000; // evita simetria a zero : os resultados para x e -x são iguais
     
 
     public static int GenerateSurfaceHeight(int x, int z)
