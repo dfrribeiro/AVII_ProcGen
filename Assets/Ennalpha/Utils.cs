@@ -13,7 +13,7 @@ public class Utils
     public static float offset = int.MaxValue/2f; // evita simetria a zero : os resultados para x e -x são iguais
     
 
-    public static int GenerateHeight(int x, int z)
+    public static int GenerateSurfaceHeight(int x, int z)
     {
         return (int)MapToRange(terrainMinHeight, terrainMaxHeight, 
             0, 1, 
@@ -32,12 +32,11 @@ public class Utils
         return FractionalBrownianMotion3D(pos.x, pos.y, pos.z, octaves, persistence);
     }
     
-    // diferente irregularity?
     public static float FractionalBrownianMotion3D(float x, float y, float z, int octaves, float persistence)
     {
-        float xi = x * irregularitySurface;
-        float yi = y * irregularitySurface;
-        float zi = z * irregularitySurface;
+        float xi = x * irregularityCave;
+        float yi = y * irregularityCave;
+        float zi = z * irregularityCave;
         float xy = FractionalBrownianMotion(xi, yi, octaves, persistence);
         float yx = FractionalBrownianMotion(yi, xi, octaves, persistence);
         float xz = FractionalBrownianMotion(xi, zi, octaves, persistence);

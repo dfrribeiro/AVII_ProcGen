@@ -257,7 +257,7 @@ public class Block
             pos.z %= World.chunkSize;
             
             Chunk neigh;
-            if (World.regionData.TryGetValue(chunkName, out neigh))
+            if (World.RegionData.TryGetValue(chunkName, out neigh))
             {
                 chunkData = neigh.chunkData;
             }
