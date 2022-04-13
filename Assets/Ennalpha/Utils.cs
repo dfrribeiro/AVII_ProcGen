@@ -5,9 +5,11 @@ using UnityEditor;
 public class Utils
 {
     public static float irregularitySurface = 0.005f; // inverse smooth
-    public static float irregularityCave = 10*irregularitySurface;
-    public static int terrainMaxHeight = 64; // max WorldSize
-    public static int terrainMinHeight = 0;
+    public static float irregularityCave = 20*irregularitySurface;
+    public static int terrainMaxHeight = 76; // max WorldSize
+    public static int surfaceMinHeight = 32;
+    public static int mountainMaxHeight = 100;
+    public static int caveMinHeight = 1;
     public static int octaves = 6;
     public static float persistence = 0.7f;
     public static float offset = 32000; // evita simetria a zero : os resultados para x e -x são iguais
@@ -15,16 +17,16 @@ public class Utils
 
     public static int GenerateSurfaceHeight(int x, int z)
     {
-        return (int)MapToRange(terrainMinHeight, terrainMaxHeight, 
+        return (int)MapToRange(surfaceMinHeight, terrainMaxHeight, 
             0, 1, 
             FractionalBrownianMotion(x * irregularitySurface, z * irregularitySurface, octaves, persistence));
     }
     
     public static int GenerateStoneHeight(int x, int z)
     {
-        return (int)MapToRange(terrainMinHeight, Math.Max(terrainMinHeight+1, terrainMaxHeight-5), 
+        return (int)MapToRange(caveMinHeight, Math.Max(caveMinHeight+1, mountainMaxHeight), 
             0, 1, 
-            FractionalBrownianMotion(x * 1.5f*irregularitySurface, z * 1.5f*irregularitySurface, octaves-1, persistence*3f));
+            FractionalBrownianMotion(x * 1.2f*irregularitySurface, z * 1.2f*irregularitySurface, octaves-1, persistence*2f));
     }
 
     public static float FractionalBrownianMotion3D(Vector3 pos, int octaves, float persistence)

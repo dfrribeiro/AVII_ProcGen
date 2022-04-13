@@ -1,16 +1,19 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class World : MonoBehaviour
 {
     public Material mat;
-    public const int COLUMN_HEIGHT = 4; // chunkSize*columnHeight = worldHeight
-    public const int CHUNK_SIZE = 16;
-    public int renderDistance = 2;
-    public static Dictionary<string, Chunk> RegionData;
+    public const int ColumnHeight = 8; // chunkSize*columnHeight = worldHeight
+    public const int ChunkSize = 16;
+    public int renderDistance = 4;
+    public static ConcurrentDictionary<string, Chunk> RegionData;
     public GameObject player;
     private Vector3 lastBuildPos;
+    public List<string> toRemove;
+    private bool drawing;
 
     public static string CreateChunkName(Vector3 v)
     {
@@ -23,13 +26,13 @@ public class World : MonoBehaviour
         {
             for (var z = 0; z < renderDistance; z++)
             {
-                for (var y = 0; y < COLUMN_HEIGHT; y++)
+                for (var y = 0; y < ColumnHeight; y++)
                 {
-                    var origin = new Vector3(x*CHUNK_SIZE, y*CHUNK_SIZE, z*CHUNK_SIZE);
+                    var origin = new Vector3(x*ChunkSize, y*ChunkSize, z*ChunkSize);
                     var c = new Chunk(origin, mat);
                     c.gameObject.transform.parent = gameObject.transform;
             
-                    RegionData.Add(c.gameObject.name, c);
+                    RegionData.TryAdd(c.gameObject.name, c);
                 }
 
                 yield return null;
@@ -53,34 +56,48 @@ public class World : MonoBehaviour
         c = new Chunk(origin, mat);
         c.gameObject.transform.parent = gameObject.transform;
             
-        RegionData.Add(c.gameObject.name, c);
+        RegionData.TryAdd(c.gameObject.name, c);
     }
     
-    void DrawChunks() // coroutine no futuro
+    IEnumerator DrawChunks()
     {
+        drawing = true;
         foreach (var pair in RegionData)
         {
             Chunk c = pair.Value;
-            if (c.status == Chunk.ChunkState.DRAW) c.DrawChunk();
-            // yield return null;
+            if (c.status == Chunk.ChunkState.DRAW)
+            {
+                c.DrawChunk();
+                yield return null;
+            }
+
+            if (Vector3.Distance(player.transform.position,
+                    c.gameObject.transform.position) > ChunkSize * renderDistance)
+            {
+                toRemove.Add(pair.Key);
+            }
         }
+
+        StartCoroutine(RemoveChunks());
+        drawing = false;
     }
 
     static Vector3 GetPlayerChunkOrigin(Vector3 playerPos)
     {
         return new Vector3
         {
-            x = (int) (playerPos.x / CHUNK_SIZE) * CHUNK_SIZE,
-            y = (int) (playerPos.y / CHUNK_SIZE) * CHUNK_SIZE,
-            z = (int) (playerPos.z / CHUNK_SIZE) * CHUNK_SIZE
+            x = Mathf.Floor(playerPos.x / ChunkSize) * ChunkSize,
+            y = Mathf.Floor(playerPos.y / ChunkSize) * ChunkSize,
+            z = Mathf.Floor(playerPos.z / ChunkSize) * ChunkSize
         };
     }
     
-    void RecursiveBuildWorld(Vector3 chunkPos, int distance)
+    IEnumerator RecursiveBuildWorld(Vector3 chunkPos, int distance)
     {
         BuildChunkAt(chunkPos);
+        yield return null;
 
-        if (--distance == 0) return;
+        if (--distance == 0) yield break;
         var directions = new[]
         {
             Vector3.forward, Vector3.back,
@@ -89,8 +106,24 @@ public class World : MonoBehaviour
         };
         foreach (var dir in directions)
         {
-            RecursiveBuildWorld(chunkPos + (dir * CHUNK_SIZE), distance);
+            StartCoroutine(
+                RecursiveBuildWorld(chunkPos + (dir * ChunkSize), distance)
+                );
         }
+    }
+
+    IEnumerator RemoveChunks()
+    {
+        foreach (var chunkName in toRemove)
+        {
+            if (RegionData.TryGetValue(chunkName, out var c))
+            {
+                Destroy(c.gameObject);
+                RegionData.TryRemove(chunkName, out c);
+                yield return null;
+            }
+        }
+        toRemove.Clear();
     }
 
     // Start is called before the first frame update
@@ -98,33 +131,36 @@ public class World : MonoBehaviour
     {
         player.SetActive(false);
         
-        RegionData = new Dictionary<string, Chunk>();
+        RegionData = new ConcurrentDictionary<string, Chunk>();
+        toRemove = new List<string>();
 
         var t = transform;
         t.position = Vector3.zero;
         t.rotation = Quaternion.identity;
 
         var spawn = player.transform.position;
-        spawn.y = Utils.GenerateSurfaceHeight((int)spawn.x, (int)spawn.z)+100;
+        spawn.y = Utils.GenerateSurfaceHeight((int)spawn.x, (int)spawn.z)+1;
         player.transform.position = spawn;
         lastBuildPos = spawn;
         
-        StartCoroutine(BuildWorld());
-        //RecursiveBuildWorld(GetPlayerChunkOrigin(spawn), renderDistance);
-        //DrawChunks();
+        //StartCoroutine(BuildWorld());
+        StartCoroutine(RecursiveBuildWorld(GetPlayerChunkOrigin(spawn), renderDistance));
+        StartCoroutine(DrawChunks());
         player.SetActive(true);
     }
 
     // Update is called once per frame
     void Update()
     {
-        /*var movement = player.transform.position - lastBuildPos;
-        if (movement.magnitude > CHUNK_SIZE) // jogador andou <chunkSize> blocos em relação à última atualização
+        var movement = player.transform.position - lastBuildPos;
+        if (movement.magnitude > ChunkSize) // jogador andou <chunkSize> blocos em relação à última atualização
         {
             lastBuildPos = GetPlayerChunkOrigin(player.transform.position);
             
-            RecursiveBuildWorld(lastBuildPos, renderDistance);
-            DrawChunks();
-        }*/
+            StartCoroutine(RecursiveBuildWorld(lastBuildPos, renderDistance));
+            StartCoroutine(DrawChunks());
+        }
+        if (!drawing) StartCoroutine(DrawChunks());
+        // TODO melhorar este comportamento
     }
 }

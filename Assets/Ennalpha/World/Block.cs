@@ -239,22 +239,22 @@ public class Block
     {
         Block[,,] chunkData;
         
-        if (pos.x < 0 || pos.x >= World.CHUNK_SIZE ||
-            pos.y < 0 || pos.y >= World.CHUNK_SIZE ||
-            pos.z < 0 || pos.z >= World.CHUNK_SIZE)
+        if (pos.x < 0 || pos.x >= World.ChunkSize ||
+            pos.y < 0 || pos.y >= World.ChunkSize ||
+            pos.z < 0 || pos.z >= World.ChunkSize)
         {
             // aceder a chunk vizinho
             Vector3 neighChunkPos = chunk.gameObject.transform.position
                                     + new Vector3(
-                                        (pos.x-(int)position.x)*World.CHUNK_SIZE,
-                                        (pos.y-(int)position.y)*World.CHUNK_SIZE, 
-                                        (pos.z-(int)position.z)*World.CHUNK_SIZE);
+                                        (pos.x-(int)position.x)*World.ChunkSize,
+                                        (pos.y-(int)position.y)*World.ChunkSize, 
+                                        (pos.z-(int)position.z)*World.ChunkSize);
             string chunkName = World.CreateChunkName(neighChunkPos);
 
             // convert to local index
-            pos.x %= World.CHUNK_SIZE;
-            pos.y %= World.CHUNK_SIZE;
-            pos.z %= World.CHUNK_SIZE;
+            pos.x %= World.ChunkSize;
+            pos.y %= World.ChunkSize;
+            pos.z %= World.ChunkSize;
             
             Chunk neigh;
             if (World.RegionData.TryGetValue(chunkName, out neigh))

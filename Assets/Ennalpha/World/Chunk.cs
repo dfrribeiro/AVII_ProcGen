@@ -7,7 +7,7 @@ public class Chunk
     // public int blocksPerFrame = 100;
     public Block[,,] chunkData;
     public GameObject gameObject;
-    public float caveRatio = 0.5f;
+    public float caveRatio = 0.42f;
     public enum ChunkState { DRAW, DONE }
     public ChunkState status = ChunkState.DRAW;
 
@@ -22,9 +22,9 @@ public class Chunk
     
     void BuildChunk()
     {
-        chunkData = new Block[World.CHUNK_SIZE, World.CHUNK_SIZE, World.CHUNK_SIZE];
+        chunkData = new Block[World.ChunkSize, World.ChunkSize, World.ChunkSize];
         
-        var range = Enumerable.Range(0, World.CHUNK_SIZE);
+        var range = Enumerable.Range(0, World.ChunkSize);
         var allPositions =
             from x in range
             from y in range
@@ -61,12 +61,14 @@ public class Chunk
         int surfaceLevel = Utils.GenerateSurfaceHeight((int) worldPos.x, (int) worldPos.z);
         int stoneLevel = Utils.GenerateStoneHeight((int) worldPos.x, (int) worldPos.z);
 
+        if ((int) worldPos.y == 0)
+            return Block.BlockType.BEDROCK;
         if (worldPos.y <= stoneLevel)
         {
-            if (Utils.FractionalBrownianMotion3D(worldPos, 1, 0.5f) < caveRatio) // 0.5f
+            if (Utils.FractionalBrownianMotion3D(worldPos, 2, 0.3f) < caveRatio)
             {
                 // cave generation
-                //return Block.BlockType.AIR; TODO
+                return Block.BlockType.AIR;
             }
             return Block.BlockType.STONE;
         }
@@ -79,6 +81,9 @@ public class Chunk
         {
             return Block.BlockType.DIRT;
         }
+        //if (worldPos.y < 50) // water level
+        //    return Block.BlockType.WATER;
+        //problem: compile meshes com agua
         return Block.BlockType.AIR;
 
         /* purely random
