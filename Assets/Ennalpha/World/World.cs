@@ -2,11 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEngine;
+using Quaternion = UnityEngine.Quaternion;
+using Vector3 = UnityEngine.Vector3;
 
 public class World : MonoBehaviour
 {
     public Material mat;
+    public PhysicMaterial physicMat;
     public const int ColumnHeight = 8; // chunkSize*columnHeight = worldHeight
     public const int ChunkSize = 16;
     public int renderDistance = 4;
@@ -15,7 +19,7 @@ public class World : MonoBehaviour
     private Vector3 lastBuildPos;
     private List<string> toRemove;
     private bool drawing;
-    
+
     public static float irregularitySurface = 0.005f; // inverse smooth
     public static float irregularityCave = 20*irregularitySurface;
     public static float irregularityOre = 1.3f*irregularityCave;
@@ -35,7 +39,7 @@ public class World : MonoBehaviour
                 for (var y = 0; y < ColumnHeight; y++)
                 {
                     var origin = new Vector3(x*ChunkSize, y*ChunkSize, z*ChunkSize);
-                    var c = new Chunk(origin, mat);
+                    var c = new Chunk(origin, mat, physicMat);
                     c.gameObject.transform.parent = gameObject.transform;
             
                     RegionData.TryAdd(c.gameObject.name, c);
@@ -53,16 +57,20 @@ public class World : MonoBehaviour
         }
     }
     
-    void BuildChunkAt(Vector3 chunkPos)
+    Chunk BuildChunkAt(Vector3 chunkPos)
     {
+        if (chunkPos.y < 0) { return null; }
         var chunkName = CreateChunkName(chunkPos);
-        if (RegionData.TryGetValue(chunkName, out var c)) return; // already in dict
-        
-        var origin = new Vector3(chunkPos.x, chunkPos.y, chunkPos.z);
-        c = new Chunk(origin, mat);
-        c.gameObject.transform.parent = gameObject.transform;
+        if (!RegionData.TryGetValue(chunkName, out var c))
+        {
+            var origin = new Vector3(chunkPos.x, chunkPos.y, chunkPos.z);
+            c = new Chunk(origin, mat, physicMat);
+            c.gameObject.transform.parent = gameObject.transform;
             
-        RegionData.TryAdd(c.gameObject.name, c);
+            RegionData.TryAdd(c.gameObject.name, c);
+        } // already in dict
+        
+        return c;
     }
     
     IEnumerator DrawChunks()
@@ -71,20 +79,20 @@ public class World : MonoBehaviour
         foreach (var pair in RegionData)
         {
             Chunk c = pair.Value;
-            if (c.status == Chunk.ChunkState.DRAW)
+            if (c.status == Chunk.ChunkState.READY)
             {
                 c.DrawChunk();
                 yield return null;
             }
 
-            if (Vector3.Distance(player.transform.position,
-                    c.gameObject.transform.position) > ChunkSize * renderDistance)
+            var dist = Vector3.Distance(player.transform.position, c.gameObject.transform.position);
+            if (dist > ChunkSize * renderDistance)
             {
+                Debug.Log(dist);
                 toRemove.Add(pair.Key);
             }
         }
-
-        StartCoroutine(RemoveChunks());
+        
         drawing = false;
     }
 
@@ -101,21 +109,20 @@ public class World : MonoBehaviour
     IEnumerator RecursiveBuildWorld(Vector3 chunkPos, int distance)
     {
         BuildChunkAt(chunkPos);
-        yield return null;
 
         if (--distance == 0) yield break;
         foreach (var dir in Utils.directions3D)
         {
-            StartCoroutine(
-                RecursiveBuildWorld(chunkPos + (dir * ChunkSize), distance)
-                );
+            StartCoroutine(RecursiveBuildWorld(chunkPos + (dir * ChunkSize), distance));
+            yield return null;
         }
     }
 
     IEnumerator RemoveChunks()
     {
-        foreach (var chunkName in toRemove)
+        for (int i = 0; i < toRemove.Count; i++)
         {
+            string chunkName = toRemove[i];
             if (RegionData.TryGetValue(chunkName, out var c))
             {
                 Destroy(c.gameObject);
@@ -124,10 +131,40 @@ public class World : MonoBehaviour
             }
         }
     }
+    
+    IEnumerator LoadChunks()
+    {
+        Vector3 playerPos = player.transform.position;
+        Vector3 playerChunkOrigin = GetPlayerChunkOrigin(playerPos);
+        StartCoroutine(RecursiveBuildWorld(playerChunkOrigin, renderDistance+1));
+        // flood-fill
+        
+        foreach (var pair in RegionData)
+        {
+            Chunk c = pair.Value;
+            while (c.status == Chunk.ChunkState.WAIT)
+            { } // not finished building
+            
+            var builtChunkCenter = c.gameObject.transform.position + Vector3.one * ChunkSize/2f;
+            if (Vector3.Distance(playerPos, builtChunkCenter) <=
+                ChunkSize * renderDistance) // chunk in range of player
+            {
+                c.DrawChunk();
+                yield return null;
+            }
+            else if (c.status == Chunk.ChunkState.ACTIVE)
+            {
+                c.UnloadChunk();
+                yield return null;
+            }
+        }
+    }
+
 
     // Start is called before the first frame update
     void Start()
     {
+        // player.GetComponent<Rigidbody>().useGravity = false;
         player.SetActive(false);
         
         RegionData = new ConcurrentDictionary<string, Chunk>();
@@ -141,13 +178,17 @@ public class World : MonoBehaviour
         spawn.y = Utils.GenerateSurfaceHeight((int)spawn.x, (int)spawn.z)+1;
         player.transform.position = spawn;
         lastBuildPos = spawn;
+        Chunk c = BuildChunkAt(GetPlayerChunkOrigin(spawn));
+        c.DrawChunk();
         
         //StartCoroutine(BuildWorld());
-        StartCoroutine(RecursiveBuildWorld(GetPlayerChunkOrigin(spawn), renderDistance));
-        StartCoroutine(DrawChunks());
+        //StartCoroutine(RecursiveBuildWorld(GetPlayerChunkOrigin(spawn), renderDistance));
+        //StartCoroutine(DrawChunks());
+        //StartCoroutine(RemoveChunks());
+        StartCoroutine(LoadChunks());
         player.SetActive(true);
     }
-
+    
     // Update is called once per frame
     void Update()
     {
@@ -156,11 +197,12 @@ public class World : MonoBehaviour
         {
             lastBuildPos = GetPlayerChunkOrigin(player.transform.position);
             
-            StartCoroutine(RecursiveBuildWorld(lastBuildPos, renderDistance));
-            StartCoroutine(DrawChunks());
+            //StartCoroutine(RecursiveBuildWorld(lastBuildPos, renderDistance));
+            //StartCoroutine(DrawChunks());
+            //StartCoroutine(RemoveChunks());
+            StartCoroutine(LoadChunks());
         }
-        if (!drawing) StartCoroutine(DrawChunks());
-        // TODO melhorar este comportamento
+        //if (!drawing) StartCoroutine(DrawChunks());
 
         // Utils.Update();
     }

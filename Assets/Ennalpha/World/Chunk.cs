@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class Chunk
 {
@@ -11,15 +12,17 @@ public class Chunk
     public GameObject gameObject;
     public float caveRatio = 0.42f;
     public float oreRatio = 0.32f;
-    public enum ChunkState { DRAW, DONE }
-    public ChunkState status = ChunkState.DRAW;
+    public enum ChunkState { WAIT, READY, ACTIVE, SLEEP }
+    public ChunkState status = ChunkState.WAIT;
     public const int WaterLevel = 50;
+    public PhysicMaterial physicMat;
 
-    public Chunk(Vector3 pos, Material mat)
+    public Chunk(Vector3 pos, Material mat, PhysicMaterial physMat)
     {
         gameObject = new GameObject(World.CreateChunkName(pos));
         gameObject.transform.position = pos;
         material = mat;
+        physicMat = physMat;
         
         BuildChunk();
     }
@@ -43,21 +46,39 @@ public class Chunk
                 new Block(PickBlockType(worldPos), pos, this, material);
         }
 
-        status = ChunkState.DRAW;
+        status = ChunkState.READY;
     }
 
     public void DrawChunk()
     {
-        foreach (var b in chunkData)
+        if (status == ChunkState.READY)
         {
-            b.Draw();
-        }
-        CombineQuads();
-        
-        MeshCollider collider = gameObject.AddComponent<MeshCollider>();
-        collider.sharedMesh = gameObject.GetComponent<MeshFilter>().mesh;
 
-        status = ChunkState.DONE;
+            foreach (var b in chunkData)
+            {
+                b.Draw();
+            }
+
+            CombineQuads();
+
+            if (gameObject.TryGetComponent<MeshCollider>(out var prevCollider))
+            {
+                GameObject.DestroyImmediate(prevCollider);
+            }
+            MeshCollider collider = gameObject.AddComponent<MeshCollider>();
+            collider.sharedMesh = gameObject.GetComponent<MeshFilter>().mesh;
+            collider.material = physicMat;
+        }
+        // if sleep, gameObject is ready but inactive
+        
+        status = ChunkState.ACTIVE;
+        gameObject.SetActive(true);
+    }
+
+    public void UnloadChunk()
+    {
+        status = ChunkState.SLEEP;
+        gameObject.SetActive(false);
     }
 
     Block.BlockType PickBlockType(Vector3 worldPos)
@@ -112,11 +133,20 @@ public class Chunk
             combine[i].transform = filters[i].transform.localToWorldMatrix;
         }
 
+        if (gameObject.TryGetComponent<MeshFilter>(out var prevFilter))
+        {
+            GameObject.DestroyImmediate(prevFilter);
+        }
         MeshFilter newFilter = gameObject.AddComponent<MeshFilter>();
         newFilter.mesh = new Mesh();
 
+        newFilter.mesh.indexFormat = IndexFormat.UInt32;
         newFilter.mesh.CombineMeshes(combine);
 
+        if (gameObject.TryGetComponent<MeshRenderer>(out var prevRenderer))
+        {
+            GameObject.DestroyImmediate(prevRenderer);
+        }
         MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
         renderer.material = material;
         
