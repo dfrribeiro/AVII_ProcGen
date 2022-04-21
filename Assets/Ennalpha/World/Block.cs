@@ -288,6 +288,8 @@ public class Block
         {
             return;
         }
+
+        // TODO if (bType == BlockType.WATER) {}
         
         foreach (CubeSide side in Enum.GetValues(typeof(CubeSide)))
         {

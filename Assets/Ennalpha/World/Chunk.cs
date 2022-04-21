@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -8,8 +10,10 @@ public class Chunk
     public Block[,,] chunkData;
     public GameObject gameObject;
     public float caveRatio = 0.42f;
+    public float oreRatio = 0.32f;
     public enum ChunkState { DRAW, DONE }
     public ChunkState status = ChunkState.DRAW;
+    public const int WaterLevel = 50;
 
     public Chunk(Vector3 pos, Material mat)
     {
@@ -19,7 +23,7 @@ public class Chunk
         
         BuildChunk();
     }
-    
+
     void BuildChunk()
     {
         chunkData = new Block[World.ChunkSize, World.ChunkSize, World.ChunkSize];
@@ -58,43 +62,43 @@ public class Chunk
 
     Block.BlockType PickBlockType(Vector3 worldPos)
     {
-        int surfaceLevel = Utils.GenerateSurfaceHeight((int) worldPos.x, (int) worldPos.z);
-        int stoneLevel = Utils.GenerateStoneHeight((int) worldPos.x, (int) worldPos.z);
+        int x = (int) worldPos.x;
+        int y = (int) worldPos.y;
+        int z = (int) worldPos.z;
+        int surfaceLevel = Utils.GenerateSurfaceHeight(x, z);
+        int stoneLevel = Utils.GenerateStoneHeight(x, z);
 
-        if ((int) worldPos.y == 0)
+        if (y == 0)
             return Block.BlockType.BEDROCK;
-        if (worldPos.y <= stoneLevel)
+        if (y <= stoneLevel)
         {
-            if (Utils.FractionalBrownianMotion3D(worldPos, 2, 0.3f) < caveRatio)
+            if (Utils.FractionalBrownianMotion3D(worldPos, 2, 0.3f, World.irregularityCave) < caveRatio)
             {
                 // cave generation
                 return Block.BlockType.AIR;
             }
+            
+            if (y <= WaterLevel && Utils.FractionalBrownianMotion3D(worldPos, 1, 0.01f, World.irregularityOre) < oreRatio)
+            {
+                return Block.BlockType.GOLDORE;
+            }
             return Block.BlockType.STONE;
         }
         
-        if ((int) worldPos.y == surfaceLevel)
+        if (y == surfaceLevel)
         {
+            // TODO bool localMaxima = CheckNeighbours(x, z, (neighbourHeight) => neighbourHeight > surfaceLevel);
+            // TODO save maxima, if on top, chance to spawn tree instead of air
+            // TODO spawn leaves around tree top
             return Block.BlockType.GRASS;
         }
-        if (worldPos.y < surfaceLevel)
+        if (y < surfaceLevel)
         {
             return Block.BlockType.DIRT;
         }
-        //if (worldPos.y < 50) // water level
-        //    return Block.BlockType.WATER;
+        // TODO if (worldPos.y < WaterLevel) return Block.BlockType.WATER;
         //problem: compile meshes com agua
         return Block.BlockType.AIR;
-
-        /* purely random
-        float rd = Random.Range(0f, 1f);
-        if (rd <= .2f)
-            return Block.BlockType.ANDESITE;
-        if (rd <= .4f)
-            return Block.BlockType.GRAVEL;
-        //if (rd <= .6f)
-        //    return Block.BlockType.AIR;
-        return Block.BlockType.STONE;*/
     }
     
     void CombineQuads()
@@ -120,5 +124,27 @@ public class Chunk
         {
             GameObject.Destroy(quad.gameObject);
         }
+    }
+    
+    private static bool CheckNeighbours(int x, int z, Func<int, bool> failCondition)
+    {
+
+        foreach (var dir in Utils.directions2D)
+        {
+            int neighborX = x + (int)dir.x;
+            int neighborZ = z + (int)dir.z;
+
+            /*if (neighborX < 0 || neighborX >= World.ChunkSize || neighborZ < 0 ||
+                neighborZ >= World.ChunkSize)
+            {
+                continue;
+            }*/
+
+            if (failCondition(Utils.GenerateSurfaceHeight(neighborX, neighborZ)))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }

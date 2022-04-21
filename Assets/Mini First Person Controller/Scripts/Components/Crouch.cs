@@ -107,6 +107,7 @@ public class Crouch : MonoBehaviour
                 CrouchEnd?.Invoke();
             }
         }
+        movement.animator.SetFloat("Crouch", IsCrouched ? 1 : 0);
     }
 
 

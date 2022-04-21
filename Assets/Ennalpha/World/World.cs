@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,8 +13,13 @@ public class World : MonoBehaviour
     public static ConcurrentDictionary<string, Chunk> RegionData;
     public GameObject player;
     private Vector3 lastBuildPos;
-    public List<string> toRemove;
+    private List<string> toRemove;
     private bool drawing;
+    
+    public static float irregularitySurface = 0.005f; // inverse smooth
+    public static float irregularityCave = 20*irregularitySurface;
+    public static float irregularityOre = 1.3f*irregularityCave;
+    
 
     public static string CreateChunkName(Vector3 v)
     {
@@ -98,13 +104,7 @@ public class World : MonoBehaviour
         yield return null;
 
         if (--distance == 0) yield break;
-        var directions = new[]
-        {
-            Vector3.forward, Vector3.back,
-            Vector3.left, Vector3.right,
-            Vector3.up, Vector3.down
-        };
-        foreach (var dir in directions)
+        foreach (var dir in Utils.directions3D)
         {
             StartCoroutine(
                 RecursiveBuildWorld(chunkPos + (dir * ChunkSize), distance)
@@ -123,7 +123,6 @@ public class World : MonoBehaviour
                 yield return null;
             }
         }
-        toRemove.Clear();
     }
 
     // Start is called before the first frame update
@@ -162,5 +161,8 @@ public class World : MonoBehaviour
         }
         if (!drawing) StartCoroutine(DrawChunks());
         // TODO melhorar este comportamento
+
+        // Utils.Update();
     }
+    
 }
