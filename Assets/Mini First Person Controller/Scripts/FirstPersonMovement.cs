@@ -45,5 +45,10 @@ public class FirstPersonMovement : MonoBehaviour
         rigidbody.velocity = transform.rotation * new Vector3(targetVelocity.x, rigidbody.velocity.y, targetVelocity.y);
         
         animator.SetFloat("Speed", IsRunning ? 1 : targetVelocity.magnitude > 0 ? 1/2f : 0);
+        if (gameObject.transform.position.y < 0)
+        {
+            gameObject.transform.position += Vector3.up * (World.ChunkSize * World.ColumnHeight);
+            rigidbody.velocity = Vector3.zero;
+        }
     }
 }

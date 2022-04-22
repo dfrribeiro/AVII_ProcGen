@@ -383,6 +383,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 1489123811}
+  mat: {fileID: 2100000, guid: d4ee82287717d944eafc0a67b55b30a6, type: 2}
 --- !u!4 &1140460806 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4207293392497186, guid: 11aaea5348574644a9eb4f4504fcce3f, type: 3}
@@ -535,10 +536,10 @@ CapsuleCollider:
   m_CorrespondingSourceObject: {fileID: 136877096903737240, guid: 11aaea5348574644a9eb4f4504fcce3f, type: 3}
   m_PrefabInstance: {fileID: 1589565060}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &1667497963 stripped
+--- !u!4 &1748958024 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c534d672a8c378f4fb43d95a4f134cdb, type: 3}
-  m_PrefabInstance: {fileID: 1962681761}
+  m_CorrespondingSourceObject: {fileID: 4490257326247362, guid: 11aaea5348574644a9eb4f4504fcce3f, type: 3}
+  m_PrefabInstance: {fileID: 1589565060}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1962681761
 PrefabInstance:
@@ -832,7 +833,7 @@ GameObject:
   - component: {fileID: 1985135690}
   - component: {fileID: 1985135692}
   - component: {fileID: 1985135691}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Fake Arm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -847,11 +848,11 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1985135689}
   m_LocalRotation: {x: -0.5458879, y: -0.8262798, z: 0.13247186, w: 0.04146401}
-  m_LocalPosition: {x: 0.64, y: -0.93, z: -0.39}
-  m_LocalScale: {x: 50, y: 50, z: 80}
+  m_LocalPosition: {x: 0.14080048, y: -0.19260514, z: -0.08580017}
+  m_LocalScale: {x: 11, y: 11, z: 17.599998}
   m_Children: []
-  m_Father: {fileID: 1667497963}
-  m_RootOrder: 6
+  m_Father: {fileID: 1748958024}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: -190, y: 12.5, z: -112}
 --- !u!23 &1985135691
 MeshRenderer:

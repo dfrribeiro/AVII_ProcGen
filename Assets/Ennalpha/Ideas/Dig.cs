@@ -19,9 +19,11 @@ public class Dig : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-
-            if (Physics.Raycast(ray, out var hit))
+            
+            if (Physics.Raycast(ray, out var hit, Mathf.Sqrt(World.ChunkSize)))
             {
+                var camPos = cam.transform;
+                Debug.DrawRay(camPos.position, camPos.forward * (hit.distance * 10), Color.red, 3f);
                 Transform chunkHit = hit.transform;
                 string chunkName = chunkHit.name;
                 Vector3Int globalHitPos = Vector3Int.FloorToInt(hit.point);
