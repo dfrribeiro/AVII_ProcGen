@@ -168,7 +168,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mat: {fileID: 2100000, guid: d4ee82287717d944eafc0a67b55b30a6, type: 2}
   physicMat: {fileID: 13400000, guid: 214f3c1b1516a9e438044946a34c7aea, type: 2}
-  renderDistance: 3
+  renderDistance: 2
   player: {fileID: 1140460800}
 --- !u!1 &705507993
 GameObject:

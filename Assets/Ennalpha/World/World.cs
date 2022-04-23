@@ -185,15 +185,15 @@ public class World : MonoBehaviour
         //StartCoroutine(RecursiveBuildWorld(GetPlayerChunkOrigin(spawn), renderDistance));
         //StartCoroutine(DrawChunks());
         //StartCoroutine(RemoveChunks());
-        StartCoroutine(LoadChunks());
+        //StartCoroutine(LoadChunks());
         player.SetActive(true);
     }
     
     // Update is called once per frame
+    private Vector3 movement = Vector3.positiveInfinity;
     void Update()
     {
-        var movement = player.transform.position - lastBuildPos;
-        if (movement.magnitude > ChunkSize) // jogador andou <chunkSize> blocos em relação à última atualização
+        if (movement.magnitude > ChunkSize/2f) // jogador andou <chunkSize>/2 blocos em relação à última atualização
         {
             lastBuildPos = GetPlayerChunkOrigin(player.transform.position);
             
@@ -202,6 +202,7 @@ public class World : MonoBehaviour
             //StartCoroutine(RemoveChunks());
             StartCoroutine(LoadChunks());
         }
+        movement = player.transform.position - lastBuildPos;
         //if (!drawing) StartCoroutine(DrawChunks());
 
         // Utils.Update();
