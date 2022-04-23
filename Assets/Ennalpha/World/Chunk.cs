@@ -53,7 +53,10 @@ public class Chunk
     {
         if (status == ChunkState.READY)
         {
-
+            foreach (var oldQuadFilter in gameObject.GetComponentsInChildren<MeshFilter>())
+            {
+                GameObject.DestroyImmediate(oldQuadFilter);
+            }
             foreach (var b in chunkData)
             {
                 b.Draw();
@@ -139,7 +142,7 @@ public class Chunk
         }
         MeshFilter newFilter = gameObject.AddComponent<MeshFilter>();
         newFilter.mesh = new Mesh();
-
+        
         newFilter.mesh.indexFormat = IndexFormat.UInt32;
         newFilter.mesh.CombineMeshes(combine);
 
