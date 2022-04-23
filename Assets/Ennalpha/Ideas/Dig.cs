@@ -18,7 +18,7 @@ public class Dig : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             
             if (Physics.Raycast(ray, out var hit, Mathf.Sqrt(World.ChunkSize)))
             {
@@ -26,7 +26,7 @@ public class Dig : MonoBehaviour
                 Debug.DrawRay(camPos.position, camPos.forward * (hit.distance * 10), Color.red, 3f);
                 Transform chunkHit = hit.transform;
                 string chunkName = chunkHit.name;
-                Vector3Int globalHitPos = Vector3Int.FloorToInt(hit.point);
+                Vector3Int globalHitPos = Vector3Int.FloorToInt(hit.point); // TODO possível bug por arranjar
 
                 if (World.RegionData.TryGetValue(chunkName, out var chunkObj))
                 {
@@ -34,7 +34,7 @@ public class Dig : MonoBehaviour
                     Vector3Int localHitPos =
                         globalHitPos - Vector3Int.FloorToInt(chunkObj.gameObject.transform.position);
 
-                    Debug.Log(globalHitPos + " -> " + localHitPos);
+                    Debug.Log(globalHitPos + " -> " + chunkName + "" + localHitPos);
 
                     try
                     {
