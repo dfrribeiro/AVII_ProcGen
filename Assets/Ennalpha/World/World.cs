@@ -175,7 +175,7 @@ public class World : MonoBehaviour
         t.rotation = Quaternion.identity;
 
         var spawn = player.transform.position;
-        spawn.y = Utils.GenerateSurfaceHeight((int)spawn.x, (int)spawn.z)+1;
+        spawn.y = Mathf.Max(Utils.GenerateStoneHeight((int)spawn.x, (int)spawn.z), Utils.GenerateSurfaceHeight((int)spawn.x, (int)spawn.z))+1;
         player.transform.position = spawn;
         lastBuildPos = spawn;
         Chunk c = BuildChunkAt(GetPlayerChunkOrigin(spawn));
